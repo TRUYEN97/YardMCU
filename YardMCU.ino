@@ -18,9 +18,6 @@ const uint8_t GREEN = 0;
 const uint8_t ENABLE_RELAY = 14;
 
 JsonDocument model;
-void setEnableRelay(bool st) {
-  digitalWrite(ENABLE_RELAY, st);
-}
 void sendJson(Stream &serialPort) {
   String jsonString;
   serializeJson(model, jsonString);
@@ -34,16 +31,16 @@ void readSerial(Stream &serialPort) {
     if (line.equalsIgnoreCase("isConnect")) {
       serialPort.println("isConnect");
     } else if (line.equalsIgnoreCase("relayOn")) {
-      setEnableRelay(ON);
+      digitalWrite(ENABLE_RELAY, 1);
     } else if (line.equalsIgnoreCase("relayOff")) {
-      setEnableRelay(OFF);
+      digitalWrite(ENABLE_RELAY, 0);
     }
   }
 }
 
 template<typename T = boolean>
 boolean hasUpdate(JsonDocument &data, const char *key, T value) {
-  if (data[key] != value) {
+  if (data[key].as<T>() != value) {
     data[key] = value;
     return true;
   }
@@ -60,66 +57,51 @@ boolean valueOf(uint8_t const &pin, boolean status = ON) {
   return false;
 }
 
-struct YardMode {
+struct Sensor {
 
-  const uint8_t ENABEL_PIN;
-  const uint8_t ROADZ_PATH_PIN;
-  const uint8_t ROADZ_PIN;
-  const uint8_t ROADS_PIN;
-  const uint8_t PACKING_PIN;
-  const uint8_t PACKING1_PIN;
-  const String name;
-  JsonDocument data;
-  JsonDocument roadzData;
-  YardMode(String n, const uint8_t &enabelPin, const uint8_t &zPathPin, const uint8_t &zPin,
-           const uint8_t &sPin, const uint8_t &packingPin, const uint8_t &packing1Pin)
-    : name(n),
-      ENABEL_PIN(enabelPin),
-      ROADZ_PATH_PIN(zPathPin),
-      ROADZ_PIN(zPin), ROADS_PIN(sPin),
-      PACKING_PIN(packingPin), PACKING1_PIN(packing1Pin) {}
+  const uint8_t ENABLE_PIN;
+  uint8_t inputPins[8] ={};
+  JsonDocument doc;
+  JsonArray data;
+  Sensor(const uint8_t &enablePin, const uint8_t &pin1, const uint8_t &pin2, const uint8_t &pin3, const uint8_t &pin4, const uint8_t &pin5, const uint8_t &pin6, const uint8_t &pin7, const uint8_t &pin8)
+    : ENABLE_PIN(enablePin), data(doc.to<JsonArray>()) {
+      inputPins[0] = pin1;
+      inputPins[1] = pin2;
+      inputPins[2] = pin3;
+      inputPins[3] = pin4;
+      inputPins[4] = pin5;
+      inputPins[5] = pin6;
+      inputPins[6] = pin7;
+      inputPins[7] = pin8;
+    }
   void init() {
-    pinMode(ENABEL_PIN, OUTPUT);
-    pinMode(ROADZ_PATH_PIN, INPUT_PULLUP);
-    pinMode(ROADZ_PIN, INPUT_PULLUP);
-    pinMode(ROADS_PIN, INPUT_PULLUP);
-    pinMode(PACKING_PIN, INPUT_PULLUP);
-    pinMode(PACKING1_PIN, INPUT_PULLUP);
-    digitalWrite(ENABEL_PIN, 0);
-    this->roadzData["wheelPath"] = false;
-    this->roadzData["wheelCrossideLine"] = false;
-    this->data["roadS"] = false;
-    this->data["packing"] = false;
-    this->data["packing1"] = false;
-    this->data["roadZ"] = this->roadzData;
+    pinMode(ENABLE_PIN, OUTPUT);
+    for (const uint8_t pin : inputPins) {
+      pinMode(pin, INPUT_PULLUP);
+      this->data.add(false);
+    }
+    digitalWrite(ENABLE_PIN, 0);
   }
 
   bool isDataChanged() {
     bool st = false;
-    digitalWrite(ENABEL_PIN, 1);
-    delay(20);
-    if (hasUpdate(this->roadzData, "wheelPath", valueOf(ROADZ_PATH_PIN))) {
-      st = true;
+    digitalWrite(ENABLE_PIN, 1);
+    delay(10);
+    bool val;
+    for (int i = 0; i < 8; i++) {
+      val = valueOf(inputPins[i]);
+      if (this->data[i].as<bool>() != val) {
+        this->data[i] = val;
+        st = true;
+      }
     }
-    if (hasUpdate(this->roadzData, "wheelCrossideLine", valueOf(ROADZ_PIN))) {
-      st = true;
-    }
-    if (hasUpdate(this->data, "roadS", valueOf(ROADS_PIN))) {
-      st = true;
-    }
-    if (hasUpdate(this->data, "packing", valueOf(PACKING_PIN))) {
-      st = true;
-    }
-    if (hasUpdate(this->data, "packing1", valueOf(PACKING1_PIN))) {
-      st = true;
-    }
-    digitalWrite(ENABEL_PIN, 1);
-    delay(20);
+    digitalWrite(ENABLE_PIN, 0);
+    delay(10);
     return st;
   }
 };
 
-struct Traffic {
+struct TrafficLight {
   const uint8_t TL_RED_PIN;
   const uint8_t TL_YELLOW_PIN;
   const uint8_t TL_GREEN_PIN;
@@ -127,7 +109,7 @@ struct Traffic {
   uint8_t time;
   uint8_t status;
   JsonDocument data;
-  Traffic(String name, const uint8_t &st, const uint8_t &rPin, const uint8_t &yPin, const uint8_t &gPin)
+  TrafficLight(String name, const uint8_t &st, const uint8_t &rPin, const uint8_t &yPin, const uint8_t &gPin)
     : name(name),
       TL_RED_PIN(rPin),
       TL_YELLOW_PIN(yPin),
@@ -170,19 +152,19 @@ struct Traffic {
       }
       if (this->status == GREEN) {
         this->time = TL_GREEN_TIME;
-        digitalWrite(this->TL_RED_PIN, OFF);
-        digitalWrite(this->TL_YELLOW_PIN, OFF);
-        digitalWrite(this->TL_GREEN_PIN, ON);
+        digitalWrite(this->TL_RED_PIN, 0);
+        digitalWrite(this->TL_YELLOW_PIN, 0);
+        digitalWrite(this->TL_GREEN_PIN, 1);
       } else if (this->status == YELLOW) {
         this->time = TL_YELLOW_TIME;
-        digitalWrite(this->TL_RED_PIN, OFF);
-        digitalWrite(this->TL_YELLOW_PIN, ON);
-        digitalWrite(this->TL_GREEN_PIN, OFF);
+        digitalWrite(this->TL_RED_PIN, 0);
+        digitalWrite(this->TL_YELLOW_PIN, 1);
+        digitalWrite(this->TL_GREEN_PIN, 0);
       } else if (this->status == RED) {
         this->time = TL_RED_TIME;
-        digitalWrite(this->TL_RED_PIN, ON);
-        digitalWrite(this->TL_YELLOW_PIN, OFF);
-        digitalWrite(this->TL_GREEN_PIN, OFF);
+        digitalWrite(this->TL_RED_PIN, 1);
+        digitalWrite(this->TL_YELLOW_PIN, 0);
+        digitalWrite(this->TL_GREEN_PIN, 0);
       }
     } else {
       this->time -= 1;
@@ -191,22 +173,21 @@ struct Traffic {
 };
 
 
-Traffic traffics[] = {
-  Traffic("trafficLightModel", RED, 21, 22, 24),
-  Traffic("trafficLightModel1", GREEN, 25, 26, 27)
+TrafficLight traffics[] = {
+  TrafficLight("trafficLightModel", RED, 16, 17, 18),
+  TrafficLight("trafficLightModel1", GREEN, 19, 20, 21)
 };
-
-YardMode yardModes[] = {
-  YardMode("b", 10, 2, 3, 4, 5, 6),
-  YardMode("c", 11, 2, 3, 4, 5, 6),
-  YardMode("d", 12, 2, 3, 4, 5, 6),
-  YardMode("e", 13, 2, 3, 4, 5, 6)
+Sensor sensors[] = {
+  Sensor(10,  2, 3, 4, 5, 6, 7 , 8, 9),
+  Sensor(11,  2, 3, 4, 5, 6, 7 , 8, 9),
+  Sensor(12,  2, 3, 4, 5, 6, 7 , 8, 9),
+  Sensor(13,  2, 3, 4, 5, 6, 7 , 8, 9)
 };
 RPI_PICO_Timer ITimer1(1);
 
 bool TimerHandler1(struct repeating_timer *t) {
   digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-  for (Traffic &traffic : traffics) {
+  for (TrafficLight &traffic : traffics) {
     traffic.tick();
   }
   return true;
@@ -217,14 +198,16 @@ void setup() {
   Serial1.begin(115200);
   pinMode(LED_BUILTIN, OUTPUT);
   pinMode(ENABLE_RELAY, OUTPUT);
-  setEnableRelay(ON);
-  for (Traffic &traffic : traffics) {
+  digitalWrite(ENABLE_RELAY, 1);
+  for (TrafficLight &traffic : traffics) {
     traffic.init();
     model[traffic.name] = traffic.data;
   }
-  for (YardMode &yardMode : yardModes) {
-    yardMode.init();
-    model[yardMode.name] = yardMode.data;
+  for (Sensor &sensor : sensors) {
+    sensor.init();
+    for(int i = 0; i <sensor.data.size(); i++){
+      model["inputs"].add(sensor.data[i]);
+    }
   }
   if (ITimer1.attachInterruptInterval(TIMER1_INTERVAL_MS * 1000, TimerHandler1)) {
     Serial.print(F("Starting ITimer1 OK, millis() = "));
@@ -235,16 +218,21 @@ void setup() {
 
 void loop() {
   bool st = false;
-  for (Traffic &traffic : traffics) {
+  for (TrafficLight &traffic : traffics) {
     if (traffic.isDataChanged()) {
       model[traffic.name] = traffic.data;
       st = true;
     }
   }
-  for (YardMode &yardMode : yardModes) {
-    if (yardMode.isDataChanged()) {
-      model[yardMode.name] = yardMode.data;
+  int index = 0;
+  for (Sensor &sensor : sensors) {
+    if (sensor.isDataChanged()) {
       st = true;
+      for(int i = 0; i <sensor.data.size(); i++){
+        model["inputs"][index++] = sensor.data[i].as<bool>();
+      }
+    }else{
+      index += sensor.data.size();
     }
   }
   if (st) {
