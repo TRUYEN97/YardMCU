@@ -31,9 +31,9 @@ void readSerial(Stream &serialPort) {
     if (line.equalsIgnoreCase("isConnect")) {
       serialPort.println("isConnect");
     } else if (line.equalsIgnoreCase("relayOn")) {
-      digitalWrite(ENABLE_RELAY, 1);
-    } else if (line.equalsIgnoreCase("relayOff")) {
       digitalWrite(ENABLE_RELAY, 0);
+    } else if (line.equalsIgnoreCase("relayOff")) {
+      digitalWrite(ENABLE_RELAY, 1);
     }
   }
 }
@@ -198,7 +198,7 @@ void setup() {
   Serial1.begin(115200);
   pinMode(LED_BUILTIN, OUTPUT);
   pinMode(ENABLE_RELAY, OUTPUT);
-  digitalWrite(ENABLE_RELAY, 1);
+  digitalWrite(ENABLE_RELAY, 0);
   for (TrafficLight &traffic : traffics) {
     traffic.init();
     model[traffic.name] = traffic.data;
