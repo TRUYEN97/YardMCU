@@ -3,18 +3,26 @@ import threading
 import serial
 import time
 import logging
+from logging.handlers import TimedRotatingFileHandler
 
-# Cấu hình Logger
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler("server.log"),  # Ghi log vào file "server.log"
-        logging.StreamHandler()  # Hiển thị log ra màn hình console
-    ]
+# Cấu hình Logger với lưu trữ theo ngày và giữ lại tối đa 30 ngày
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+# Thiết lập handler cho file log
+log_handler = TimedRotatingFileHandler(
+    "server.log",       # Tên file log
+    when="midnight",    # Tạo file log mới vào lúc nửa đêm mỗi ngày
+    interval=1,         # Chu kỳ là mỗi ngày
+    backupCount=30      # Giữ lại tối đa 30 file log (30 ngày)
 )
 
-logger = logging.getLogger(__name__)
+# Định dạng log
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+log_handler.setFormatter(formatter)
+
+# Thêm handler vào logger
+logger.addHandler(log_handler)
 
 # Cấu hình Serial (tùy chỉnh theo cổng serial và tốc độ baud bạn đang dùng)
 SERIAL_PORT = '/dev/serial0'  # Cổng Serial trên Pi Zero W
