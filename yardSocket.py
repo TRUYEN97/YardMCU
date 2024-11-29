@@ -1,139 +1,174 @@
-import socket
-import threading
-import serial
-import time
+import asyncio
+import json
 import logging
+import serial_asyncio
 from logging.handlers import TimedRotatingFileHandler
+from datetime import datetime
 
-# Cấu hình Logger với lưu trữ theo ngày và giữ lại tối đa 30 ngày
+# Cấu hình Logger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-# Thiết lập handler cho file log
 log_handler = TimedRotatingFileHandler(
-    "server.log",       # Tên file log
-    when="midnight",    # Tạo file log mới vào lúc nửa đêm mỗi ngày
-    interval=1,         # Chu kỳ là mỗi ngày
-    backupCount=30      # Giữ lại tối đa 30 file log (30 ngày)
+    "server.log", when="midnight", interval=1, backupCount=30
 )
-
-# Định dạng log
 formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 log_handler.setFormatter(formatter)
-
-# Thêm handler vào logger
 logger.addHandler(log_handler)
 
-# Cấu hình Serial (tùy chỉnh theo cổng serial và tốc độ baud bạn đang dùng)
-SERIAL_PORT = '/dev/serial0'  # Cổng Serial trên Pi Zero W
+# Cấu hình Serial
+SERIAL_PORT = '/dev/serial0'
 BAUD_RATE = 115200
 
 # Cấu hình Socket
-HOST = '0.0.0.0'  # Cho phép kết nối từ tất cả các IP
-PORT = 6868      # Cổng socket server
+HOST = '0.0.0.0'
+PORT = 6868
+AUTHORIZED_CLIENTS = {"client": "f3cea34ed1507b50f09c236045bb1067", "special_client":"5756a05e4a1cc90f6dee0025a13a2f48"}
+MAX_CLIENTS = 100  # Giới hạn số lượng client
 
-# Danh sách các kết nối client và lock
-clients = []
-clients_lock = threading.Lock()  # Khóa để đồng bộ danh sách clients
+# Biến toàn cục
+clients = []  # Danh sách client (mỗi phần tử là tuple (username, writer))
+special_client = None  # Client dặc biệt dể nhận dữ liệu
 
-# Biến lưu trữ dữ liệu cũ và thời gian nhận dữ liệu cuối cùng
-last_data = ""  # Dữ liệu nhận được cuối cùng từ serial
-last_received_time = time.time()  # Thời gian nhận dữ liệu cuối cùng
-data_lock = threading.Lock()  # Khóa cho dữ liệu để đảm bảo an toàn
+last_data = ""  # Dữ liệu nhận cuối cùng từ serial
+last_received_time = datetime.now().timestamp()
+data_lock = asyncio.Lock()
 
-# Hàm mở kết nối serial với cơ chế thử lại nếu thất bại
-def open_serial():
-    while True:
-        try:
-            ser = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=1)
-            logger.info("Đã kết nối lại với cổng serial.")
-            return ser
-        except serial.SerialException as e:
-            logger.error(f"Lỗi kết nối với serial: {e}. Thử lại sau 5 giây...")
-            time.sleep(5)
+# Broadcast dữ liệu tới tất cả các client dã xác thực
+async def broadcast(message):
+    global clients, last_received_time
+    to_remove = []
+    async with data_lock:
+        last_received_time = datetime.now().timestamp()
+        for username, writer in clients:
+            try:
+                mess = message.encode('utf-8') + b"\r\n"
+                writer.write(mess)
+                await writer.drain()
+            except Exception as e:
+                logger.error(f"Loi khi gui toi client {username}: {e}")
+                to_remove.append((username, writer))
 
-# Khởi tạo cổng serial
-ser = open_serial()
+        # Xóa các client không khả dụng
+        for client in to_remove:
+            clients.remove(client)
 
-def handle_client(client_socket, address):
-    logger.info(f"Client {address} đã kết nối")
-    with clients_lock:  # Sử dụng lock khi thêm client vào danh sách
-        clients.append(client_socket)
+# Coroutine xử lý từng client
+async def handle_client(reader, writer):
+    global clients, special_client
+    peername = writer.get_extra_info("peername")
+    logger.info(f"Client {peername} dang ket noi...")
+
+    # Kiểm tra nếu danh sách client dã dầy
+    if len(clients) >= MAX_CLIENTS:
+        logger.warning("So luong ket noi toi da. Tu troi ket noi")
+        writer.write(json.dumps({"status": "error", "message": "Server full"}).encode('utf-8') + b"\r\n")
+        await writer.drain()
+        writer.close()
+        await writer.wait_closed()
+        return
+
+    # Xác thực client
+    try:
+        auth_data = await reader.readline()
+        auth_json = json.loads(auth_data.decode('utf-8').strip())
+        username = auth_json.get("username")
+        password = auth_json.get("password")
+
+        if username in AUTHORIZED_CLIENTS and AUTHORIZED_CLIENTS[username] == password:
+            writer.write(json.dumps({"status": "success"}).encode('utf-8') +  b"\r\n")
+            await writer.drain()
+            logger.info(f"Client {username} xac thuc thanh cong!")
+            clients.append((username, writer))
+            if username == "special_client":
+                special_client = writer
+        else:
+            writer.write(json.dumps({"status": "error", "message": "Unauthorized"}).encode('utf-8') + b"\r\n")
+            await writer.drain()
+            writer.close()
+            await writer.wait_closed()
+            logger.warning(f"Client {peername} Xac thuc that bai.")
+            return
+    except Exception as e:
+        logger.error(f"Loi khi xac thuc client {peername}: {e}")
+        writer.close()
+        await writer.wait_closed()
+        return
+
+    # Xử lý dữ liệu từ client
     try:
         while True:
-            # Chờ dữ liệu từ client (nếu cần xử lý dữ liệu từ client)
-            data = client_socket.recv(1024)
+            data = await reader.readline()
             if not data:
                 break
-            print(f"Nhận từ {address}: {data.decode()}")
-    except ConnectionResetError:
-        logger.warning(f"Client {address} đã ngắt kết nối")
+            message = data.decode('utf-8').strip()
+
+            # Nếu là client dặc biệt, xử lý dữ liệu như từ serial
+            if writer == special_client:
+                async with data_lock:
+                    global last_data
+                    last_data = message
+                await broadcast(message)
+    except Exception as e:
+        logger.error(f"Loi client {username}: {e}")
     finally:
-        with clients_lock:  # Sử dụng lock khi xóa client khỏi danh sách
-            clients.remove(client_socket)
-        client_socket.close()
+        logger.info(f"Client {username} Ngat ket noi.")
+        clients.remove((username, writer))
+        if writer == special_client:
+            special_client = None
+        writer.close()
+        await writer.wait_closed()
 
-def start_server():
-    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server.bind((HOST, PORT))
-    server.listen(5)
-    logger.info(f"Socket server đang chạy trên {HOST}:{PORT}")
+# Coroutine chạy server
+async def start_server():
+    server = await asyncio.start_server(handle_client, HOST, PORT)
+    addr = server.sockets[0].getsockname()
+    logger.info(f"Server socket dang chay tren {addr}")
+    async with server:
+        await server.serve_forever()
 
-    while True:
-        client_socket, addr = server.accept()
-        client_thread = threading.Thread(target=handle_client, args=(client_socket, addr))
-        client_thread.start()
-
-def read_serial():
-    global ser, last_data, last_received_time
+# Coroutine dọc từ serial
+async def handle_serial():
+    global last_data
     while True:
         try:
-            if ser.in_waiting > 0:
-                # Đọc dữ liệu từ serial
-                data = ser.readline().decode('utf-8', errors='ignore')
-                print(f"Nhận từ Serial: {data}")
-                # Cập nhật dữ liệu cũ và thời gian nhận cuối cùng
-                with data_lock:
-                    last_data = data
-                    last_received_time = time.time()
-                
-                broadcast(data)
-        except (serial.SerialException, OSError) as e:
-            logger.error(f"Lỗi khi đọc từ Serial: {e}. Đang thử kết nối lại...")
-            ser.close()
-            ser = open_serial()  # Thử kết nối lại serial
+            reader, writer = await serial_asyncio.open_serial_connection(url=SERIAL_PORT, baudrate=BAUD_RATE)
+            logger.info(f"ket noi voi Serial {SERIAL_PORT} - {BAUD_RATE}")
+            try:
+                while writer.transport.serial.is_open:
+                        data = await reader.readline()
+                        if data:
+                            message = data.decode('utf-8').strip()
+                            async with data_lock:
+                                last_data = message
+                            await broadcast(message)
+            except Exception as e:
+                logger.error(f"Loi khi doc serial: {e}")
+            writer.close()
+            logger.info(f"ngat ket noi voi Serial {SERIAL_PORT} - {BAUD_RATE}")
+        except Exception as e:
+            await asyncio.sleep(1)
 
-def check_and_resend():
-    """Kiểm tra nếu quá 1 giây không có dữ liệu mới từ serial thì gửi lại dữ liệu cũ."""
+# Coroutine gửi lại dữ liệu cũ
+async def resend_last_data():
     global last_data, last_received_time
     while True:
-        time.sleep(1)  # Kiểm tra mỗi giây một lần
-        current_time = time.time()
-        with data_lock:
-            # Nếu đã hơn 1 giây kể từ khi nhận dữ liệu cuối cùng
-            if current_time - last_received_time > 1 and last_data:
-                logger.info("Không có dữ liệu mới, gửi lại dữ liệu cũ...")
-                broadcast(last_data)
+        await asyncio.sleep(1)
+        current_time = datetime.now().timestamp()
+        if current_time - last_received_time > 1 and last_data:
+            await broadcast(last_data)
 
-def broadcast(message):
-    with clients_lock:  # Sử dụng lock để đảm bảo an toàn khi lặp qua danh sách
-        for client in clients[:]:  # Lặp qua bản sao của danh sách
-            try:
-                client.sendall(message.encode('utf-8'))
-            except BrokenPipeError:
-                logger.warning("Lỗi khi gửi dữ liệu tới client.")
-                with clients_lock:
-                    clients.remove(client)
+# Chương trình chính
+async def main():
+    
+    await asyncio.gather(
+        start_server(),
+        handle_serial(),
+        resend_last_data()
+    )
 
-# Khởi tạo server và đọc serial trong các thread riêng biệt
-server_thread = threading.Thread(target=start_server)
-serial_thread = threading.Thread(target=read_serial)
-resend_thread = threading.Thread(target=check_and_resend)
-
-server_thread.start()
-serial_thread.start()
-resend_thread.start()
-
-server_thread.join()
-serial_thread.join()
-resend_thread.join()
+if __name__ == "__main__":
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        logger.info("Server stop.")
