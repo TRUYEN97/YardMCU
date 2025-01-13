@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Client Manager</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="/static/script.js" defer></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Client Manager</h1>
+        <div>
+            <h2>Connected Clients</h2>
+            <ul id="client-list"></ul>
+        </div>
+        <div>
+            <h2>Actions</h2>
+            <button onclick="fetchClients()">Refresh Client List</button>
+            <form id="disconnect-form">
+                <input type="text" id="disconnect-username" placeholder="Username to disconnect">
+                <button type="submit">Disconnect</button>
+            </form>
+            <form id="update-form">
+                <input type="number" id="max-clients" placeholder="Max Clients">
+                <button type="submit">Update Max Clients</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
