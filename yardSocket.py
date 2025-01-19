@@ -18,7 +18,7 @@ log_handler.setFormatter(formatter)
 logger.addHandler(log_handler)
 
 # Configuration constants
-SERIAL_PORT = '/dev/serial0'
+SERIAL_PORT = 'COM12'
 BAUD_RATE = 115200
 HOST = '0.0.0.0'
 PORT = 6868
@@ -56,6 +56,7 @@ class ClientManager:
         async with data_lock:
             for username, writer in self.clients:
                 try:
+                    print(message)
                     writer.write((message + "\r\n").encode('utf-8'))
                     await writer.drain()
                 except Exception as e:
@@ -83,9 +84,10 @@ class Authenticator:
 
     def authenticate(self, username, password):
         try:
-            response = requests.post(self.api_url, json={"username": username, "password": password})
-            if response.status_code == 200:
-                return response.json().get("authorized", False)
+            return True;
+            #response = requests.post(self.api_url, json={"username": username, "password": password})
+            #if response.status_code == 200:
+                #return response.json().get("authorized", False)
         except Exception as e:
             logger.error(f"Authentication API error: {e}")
         return False
