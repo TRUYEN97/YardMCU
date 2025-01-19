@@ -1,0 +1,54 @@
+2025-01-19 15:59:49,969 - INFO - Connected to Serial COM12 - 115200
+2025-01-19 15:59:49,970 - INFO - Socket server running on ('0.0.0.0', 6868)
+2025-01-19 15:59:51,556 - INFO - Client ('192.168.137.191', 47988) connected...
+2025-01-19 15:59:51,574 - INFO - Client user authenticated successfully!
+2025-01-19 16:05:14,520 - INFO - Client ('192.168.137.191', 47988) disconnected.
+2025-01-19 16:05:14,522 - INFO - Server stopped.
+2025-01-19 16:06:19,199 - INFO - Connected to Serial COM12 - 115200
+2025-01-19 16:06:19,199 - INFO - Socket server running on ('0.0.0.0', 6868)
+2025-01-19 16:07:17,265 - INFO - Client ('192.168.137.191', 47992) connected...
+2025-01-19 16:07:17,269 - INFO - Client user authenticated successfully!
+2025-01-19 16:07:37,274 - INFO - Client ('192.168.137.191', 47992) disconnected.
+2025-01-19 16:07:37,275 - INFO - Server stopped.
+2025-01-19 16:42:23,317 - INFO - Connected to Serial COM12 - 115200
+2025-01-19 16:42:23,318 - INFO - Socket server running on ('0.0.0.0', 6868)
+2025-01-19 16:42:34,601 - INFO - Client ('192.168.137.191', 48066) connected...
+2025-01-19 16:42:34,605 - INFO - Client user authenticated successfully!
+2025-01-19 16:49:23,957 - INFO - Client ('192.168.137.191', 48066) disconnected.
+2025-01-19 16:49:23,958 - INFO - Server stopped.
+2025-01-19 17:02:01,407 - INFO - Connected to Serial COM12 - 115200
+2025-01-19 17:02:01,407 - INFO - Socket server running on ('0.0.0.0', 6868)
+2025-01-19 17:02:30,639 - INFO - Client ('192.168.137.191', 48086) connected...
+2025-01-19 17:02:30,647 - INFO - Client user authenticated successfully!
+2025-01-19 17:07:03,242 - INFO - Client ('192.168.137.191', 48086) disconnected.
+2025-01-19 17:07:03,243 - INFO - Server stopped.
+2025-01-19 17:16:03,896 - INFO - Connected to Serial COM12 - 115200
+2025-01-19 17:16:03,896 - INFO - Socket server running on ('0.0.0.0', 6868)
+2025-01-19 17:16:18,802 - INFO - Client ('192.168.137.191', 48102) connected...
+2025-01-19 17:16:18,812 - INFO - Client user authenticated successfully!
+2025-01-19 17:19:09,451 - INFO - Client ('192.168.137.191', 48102) disconnected.
+2025-01-19 17:19:09,452 - INFO - Server stopped.
+2025-01-19 17:19:54,964 - INFO - Connected to Serial COM12 - 115200
+2025-01-19 17:19:54,965 - INFO - Socket server running on ('0.0.0.0', 6868)
+2025-01-19 17:20:14,583 - INFO - Client ('192.168.137.191', 48104) connected...
+2025-01-19 17:20:14,589 - INFO - Client user authenticated successfully!
+2025-01-19 17:24:09,321 - INFO - Client ('192.168.137.191', 48104) disconnected.
+2025-01-19 17:24:09,322 - INFO - Server stopped.
+2025-01-19 17:46:20,384 - INFO - Connected to Serial COM12 - 115200
+2025-01-19 17:46:20,385 - INFO - Socket server running on ('0.0.0.0', 6868)
+2025-01-19 17:46:31,280 - INFO - Client ('192.168.137.191', 48130) connected...
+2025-01-19 17:46:31,286 - INFO - Client user authenticated successfully!
+2025-01-19 17:47:47,189 - INFO - Client ('192.168.137.191', 48130) disconnected.
+2025-01-19 17:47:47,189 - INFO - Server stopped.
+2025-01-19 17:48:10,018 - INFO - Connected to Serial COM12 - 115200
+2025-01-19 17:48:10,019 - INFO - Socket server running on ('0.0.0.0', 6868)
+2025-01-19 17:48:18,795 - INFO - Client ('192.168.137.191', 48136) connected...
+2025-01-19 17:48:18,804 - INFO - Client user authenticated successfully!
+2025-01-19 17:48:44,310 - INFO - Client ('192.168.137.191', 48136) disconnected.
+2025-01-19 17:48:44,311 - INFO - Server stopped.
+2025-01-19 17:55:40,828 - INFO - Connected to Serial COM12 - 115200
+2025-01-19 17:55:40,828 - INFO - Socket server running on ('0.0.0.0', 6868)
+2025-01-19 17:55:48,330 - INFO - Client ('192.168.137.191', 48158) connected...
+2025-01-19 17:55:48,339 - INFO - Client user authenticated successfully!
+2025-01-19 17:57:44,316 - INFO - Client ('192.168.137.191', 48158) disconnected.
+2025-01-19 17:57:44,317 - INFO - Server stopped.

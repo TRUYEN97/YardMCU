@@ -3,17 +3,19 @@
 
 #include <Arduino.h>
 #include <ArduinoJson.h>
+#include "DigitalIO.h"
 
 class SensorIO {
 
   const uint8_t ENABLE_PIN;
-  uint8_t inputPins[8] = {};
+  DIO dios[8];
   JsonDocument doc;
   JsonArray data;
 public:
-  SensorIO(const uint8_t &enablePin, const uint8_t &pin1, const uint8_t &pin2, const uint8_t &pin3, const uint8_t &pin4, const uint8_t &pin5, const uint8_t &pin6, const uint8_t &pin7, const uint8_t &pin8);
+  SensorIO(const uint8_t enablePin, uint8_t pin1, uint8_t pin2, uint8_t pin3,
+   uint8_t pin4, uint8_t pin5, uint8_t pin6, uint8_t pin7, uint8_t pin8);
 
-  JsonArray getData();
+  const JsonArray& getData();
 
   void init();
 

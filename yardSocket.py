@@ -21,7 +21,7 @@ logger.addHandler(log_handler)
 SERIAL_PORT = 'COM12'
 BAUD_RATE = 115200
 HOST = '0.0.0.0'
-PORT = 6868
+PORT = 28686
 AUTH_API_URL = "http://example.com/api/auth"
 
 # Global variables

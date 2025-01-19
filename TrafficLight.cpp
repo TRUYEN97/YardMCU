@@ -19,7 +19,7 @@ String TrafficLight::getName() {
   return name;
 }
 
-JsonDocument TrafficLight::getData() {
+const JsonDocument& TrafficLight::getData() {
   return this->data;
 }
 

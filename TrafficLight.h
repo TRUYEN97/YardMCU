@@ -6,7 +6,7 @@
 
 class TrafficLight {
   
-  static const uint8_t TL_RED_TIME = 20;
+  static const uint8_t TL_RED_TIME = 15;
   static const uint8_t TL_YELLOW_TIME = 3;
   static const uint8_t TL_GREEN_TIME = TL_RED_TIME - TL_YELLOW_TIME - 1;
 
@@ -26,7 +26,7 @@ public:
 
   String getName();
 
-  JsonDocument getData();
+  const JsonDocument& getData();
 
   void init();
 

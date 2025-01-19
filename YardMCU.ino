@@ -63,7 +63,7 @@ void setup() {
   }
   for (SensorIO &sensor : sensors) {
     sensor.init();
-    JsonArray arr = sensor.getData();
+    const JsonArray& arr = sensor.getData();
     for (int i = 0; i < arr.size(); i++) {
       sensorModel["inputs"].add(arr[i]);
     }
@@ -90,14 +90,14 @@ void loop() {
   st = false;
   int index = 0;
   for (SensorIO &sensor : sensors) {
-    JsonArray arr = sensor.getData();
     if (sensor.isDataChanged()) {
       st = true;
+      JsonArray arr = sensor.getData();
       for (int i = 0; i < arr.size(); i++) {
         sensorModel["inputs"][index++] = arr[i].as<bool>();
       }
     } else {
-      index += arr.size();
+      index += 8;
     }
   }
   if (st) {
