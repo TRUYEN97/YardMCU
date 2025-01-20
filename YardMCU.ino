@@ -15,6 +15,7 @@ TrafficLight traffics[] = {
   TrafficLight("trafficLightModel", TrafficLight::GREEN, 16, 17, 18),
   TrafficLight("trafficLightModel1", TrafficLight::RED, 19, 20, 21)
 };
+
 SensorIO sensors[] = {
   SensorIO(10, 2, 3, 4, 5, 6, 7, 8, 9),
   SensorIO(11, 2, 3, 4, 5, 6, 7, 8, 9),
@@ -104,6 +105,6 @@ void loop() {
     sendJson(sensorModel, Serial);
     sendJson(sensorModel, Serial1);
   }
-  // readSerial(Serial);
-  // readSerial(Serial1);
+  readSerial(Serial);
+  readSerial(Serial1);
 }

@@ -3,7 +3,7 @@
 DIO::DIO():DIO(0){}
 
 DIO::DIO(uint8_t pin)
-  : pin(pin), inputMode(INPUT_PULLUP), outputMode(OUTPUT), currMode(INPUT_PULLUP), holdTime(0), time(millis()){}
+  : pin(pin), inputMode(INPUT_PULLUP), outputMode(OUTPUT), currMode(INPUT), holdTime(0), time(millis()){}
 
 void DIO::setInputMode(PinMode inputMode) {
   this->inputMode = inputMode;
@@ -28,6 +28,7 @@ void DIO::setValue(bool val) {
 void DIO::ensurePinMode(PinMode mode) {
   if (this->currMode != mode) {
     pinMode(this->pin, mode);
+    Serial.println(mode);
     this->currMode = mode;
   }
 }
