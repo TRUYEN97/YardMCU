@@ -3,11 +3,16 @@
 DIO::DIO():DIO(0){}
 
 DIO::DIO(uint8_t pin)
-  : pin(pin), inputMode(INPUT), outputMode(OUTPUT), currMode(OUTPUT), holdTime(0), time(millis()){}
+  : pin(pin), inputMode(INPUT_PULLUP), outputMode(OUTPUT), currMode(INPUT_PULLUP), holdTime(0), time(millis()){}
 
 void DIO::setInputMode(PinMode inputMode) {
   this->inputMode = inputMode;
   ensurePinMode(this->inputMode);
+}
+
+void DIO::setPin(uint8_t pin){
+  this->pin = pin;
+  ensurePinMode(this->currMode);
 }
 
 void DIO::setOutputMode(PinMode outputMode) {
@@ -53,6 +58,10 @@ bool DIO::checkValue(boolean value) {
 
 bool DIO::getValue(unsigned int delayTime, bool target) {
   return checkValue(getPinValue(delayTime, target));
+}
+
+unsigned long DIO::getHoldTime(){
+  return this->holdTime;
 }
 
 void DIO::setHoldTime(unsigned long holdTime) {

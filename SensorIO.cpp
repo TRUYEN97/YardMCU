@@ -22,7 +22,7 @@
     pinMode(ENABLE_PIN, OUTPUT);
     for (DIO &dio : dios) {
       dio.setInputMode(INPUT_PULLUP);
-      dio.setHoldTime(200);
+      dio.setHoldTime(500);
       this->data.add(false);
     }
     digitalWrite(ENABLE_PIN, 0);
@@ -31,7 +31,7 @@
   bool SensorIO::isDataChanged() {
     bool st = false;
     digitalWrite(ENABLE_PIN, 1);
-    delay(10);
+    // delay(10);
     bool val;
     for (int i = 0; i < 8; i++) {
       val = this->dios[i].getValue(0, false);

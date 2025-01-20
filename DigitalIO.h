@@ -16,6 +16,8 @@ public:
   DIO();
   DIO(uint8_t pin);
 
+  void setPin(uint8_t pin);
+
   void setInputMode(PinMode inputMode);
 
   void setOutputMode(PinMode outputMode);
@@ -25,5 +27,7 @@ public:
   bool getValue(unsigned int delayTime = 0, bool target = true);
 
   void setHoldTime(unsigned long holdTime);
+
+  unsigned long getHoldTime();
 };
 #endif
