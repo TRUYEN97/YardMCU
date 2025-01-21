@@ -105,6 +105,6 @@ void loop() {
     sendJson(sensorModel, Serial);
     sendJson(sensorModel, Serial1);
   }
-  readSerial(Serial);
-  readSerial(Serial1);
+  // readSerial(Serial);
+  // readSerial(Serial1);
 }

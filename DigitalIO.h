@@ -8,6 +8,7 @@ class DIO {
   PinMode currMode;
   unsigned long holdTime;
   unsigned long time;
+  bool firstTime;
   void ensurePinMode(PinMode mode);
   bool getPinValue(unsigned int delayTime, bool target);
   bool checkValue(boolean value);

@@ -1,18 +1,19 @@
 #include "DigitalIO.h"
 
-DIO::DIO():DIO(0){}
+DIO::DIO()
+  : DIO(0) {}
 
 DIO::DIO(uint8_t pin)
-  : pin(pin), inputMode(INPUT_PULLUP), outputMode(OUTPUT), currMode(INPUT), holdTime(0), time(millis()){}
+  : pin(pin), inputMode(INPUT_PULLUP), outputMode(OUTPUT), currMode(inputMode), holdTime(0), time(millis()), firstTime(true) {}
 
 void DIO::setInputMode(PinMode inputMode) {
   this->inputMode = inputMode;
   ensurePinMode(this->inputMode);
 }
 
-void DIO::setPin(uint8_t pin){
+void DIO::setPin(uint8_t pin) {
   this->pin = pin;
-  ensurePinMode(this->currMode);
+  pinMode(this->pin, this->currMode);
 }
 
 void DIO::setOutputMode(PinMode outputMode) {
@@ -26,9 +27,9 @@ void DIO::setValue(bool val) {
 }
 
 void DIO::ensurePinMode(PinMode mode) {
-  if (this->currMode != mode) {
+  if (this->firstTime || this->currMode != mode) {
+    this->firstTime = false;
     pinMode(this->pin, mode);
-    Serial.println(mode);
     this->currMode = mode;
   }
 }
@@ -61,7 +62,7 @@ bool DIO::getValue(unsigned int delayTime, bool target) {
   return checkValue(getPinValue(delayTime, target));
 }
 
-unsigned long DIO::getHoldTime(){
+unsigned long DIO::getHoldTime() {
   return this->holdTime;
 }
 
