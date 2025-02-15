@@ -22,7 +22,7 @@ SERIAL_PORT = 'COM12'
 BAUD_RATE = 115200
 HOST = '0.0.0.0'
 PORT = 28686
-AUTH_API_URL = "http://example.com/api/auth"
+AUTH_API_URL = "https://thuexetaplai.theworldbelongsto.us/api/v1/checkcard"
 
 # Global variables
 default_max_clients = 100
@@ -84,10 +84,10 @@ class Authenticator:
 
     def authenticate(self, username, password):
         try:
-            return True;
-            #response = requests.post(self.api_url, json={"username": username, "password": password})
-            #if response.status_code == 200:
-                #return response.json().get("authorized", False)
+            # return True;
+            response = requests.post(self.api_url, json={"id": username})
+            if response.status_code == 200:
+                return response.json().get("renting", False)
         except Exception as e:
             logger.error(f"Authentication API error: {e}")
         return False
