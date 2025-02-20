@@ -160,12 +160,23 @@ class SocketServer:
                 data = await reader.readline()
                 if not data:
                     break
-
                 message = data.decode('utf-8').strip()
                 if writer == self.client_manager.special_client:
                     async with data_lock:
                         self.client_manager.last_data = message
                     await self.client_manager.broadcast(message)
+                else:
+                    auth_json = json.loads(message)
+                    username = auth_json.get("username")
+                    password = auth_json.get("password")
+                    if not self.authenticator.authenticate(username, password):
+                        writer.write(json.dumps({"status": "error", "message": "Unauthorized"}).encode('utf-8') + b"\r\n")
+                        await writer.drain()
+                        writer.close()
+                        await writer.wait_closed()
+                        logger.warning(f"Client {peername} authentication failed.")
+                        return
+                        
 
         except Exception as e:
             logger.error(f"Error handling client {peername}: {e}")
