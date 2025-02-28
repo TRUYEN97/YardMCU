@@ -43,6 +43,13 @@ class ClientManager:
             self.special_client = writer
         return True
 
+    async def has_username_exists(self, username):
+        for client in self.clients:
+            print(client)
+            if client[0] == username:
+                return True;
+        return False
+
     async def remove_client(self, writer):
         for client in self.clients:
             if client[1] == writer:
@@ -87,7 +94,8 @@ class Authenticator:
             # return True;
             response = requests.post(self.api_url, json={"id": username})
             if response.status_code == 200:
-                return response.json().get("renting", False)
+                jsoOb = response.json()
+                return jsoOb.get("renting", False) and jsoOb.get("status", False), jsoOb
         except Exception as e:
             logger.error(f"Authentication API error: {e}")
         return False
@@ -135,21 +143,26 @@ class SocketServer:
             auth_json = json.loads(auth_data.decode('utf-8').strip())
             username = auth_json.get("username")
             password = auth_json.get("password")
-
-            if self.authenticator.authenticate(username, password):
+            if await self.client_manager.has_username_exists(username):
+                writer.write(json.dumps({"status": False, "message": "Thẻ đã được sử dụng trước đó!"}).encode('utf-8') + b"\r\n")
+                await writer.drain()
+                writer.close()
+                await writer.wait_closed()
+                return
+            st, jsonResponce = self.authenticator.authenticate(username, password)
+            if st:
                 success = await self.client_manager.add_client(username, writer)
                 if not success:
-                    writer.write(json.dumps({"status": "error", "message": "Server full"}).encode('utf-8') + b"\r\n")
+                    writer.write(json.dumps({"status": False, "message": "Server quá tải"}).encode('utf-8') + b"\r\n")
                     await writer.drain()
                     writer.close()
                     await writer.wait_closed()
                     return
-
-                writer.write(json.dumps({"status": "success"}).encode('utf-8') + b"\r\n")
+                writer.write(json.dumps(jsonResponce).encode('utf-8') + b"\r\n")
                 await writer.drain()
                 logger.info(f"Client {username} authenticated successfully!")
             else:
-                writer.write(json.dumps({"status": "error", "message": "Unauthorized"}).encode('utf-8') + b"\r\n")
+                writer.write(json.dumps({"status": False, "message": "Thẻ không hợp lệ!!!"}).encode('utf-8') + b"\r\n")
                 await writer.drain()
                 writer.close()
                 await writer.wait_closed()
@@ -169,13 +182,16 @@ class SocketServer:
                     auth_json = json.loads(message)
                     username = auth_json.get("username")
                     password = auth_json.get("password")
-                    if not self.authenticator.authenticate(username, password):
-                        writer.write(json.dumps({"status": "error", "message": "Unauthorized"}).encode('utf-8') + b"\r\n")
+                    st, jsonResponce = self.authenticator.authenticate(username, password)
+                    if st:
+                        writer.write(json.dumps(jsonResponce).encode('utf-8') + b"\r\n")
+                        await writer.drain()
+                    else:
+                        writer.write(json.dumps({"status": True, "message": "Thẻ không hợp lệ!!!"}).encode('utf-8') + b"\r\n")
                         await writer.drain()
                         writer.close()
                         await writer.wait_closed()
                         logger.warning(f"Client {peername} authentication failed.")
-                        return
                         
 
         except Exception as e:
